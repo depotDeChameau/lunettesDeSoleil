@@ -11,6 +11,9 @@ lunettes = cv2.imread('lunettesMieux.png', cv2.IMREAD_UNCHANGED)
 
 print(lunettes.shape)
 
+def pupille(ex, ey, ew, eh):
+    return ex + ew // 2, ey + eh // 2
+
 def f(image : np.array, lunettes : np.array) -> np.array :
     print("Dimension de l'image contenant les visages :", image.shape)
     print("Dimension de l'image contenant les lunettes :", lunettes.shape)
@@ -27,26 +30,20 @@ def f(image : np.array, lunettes : np.array) -> np.array :
         
         yeux = eye_cascade.detectMultiScale(image)
         print("Dimension des yeux :", yeux.shape)
-        
-        oeilG, oeilD, *_ = yeux # il semblerait que les yeux soient classes dans l'ordre (x,y) (lexicographique)
-        oeilGX, oeilGY, oeilGL, oeilGH = oeilG
-        oeilDX, oeilDY, oeilDL, oeilDH = oeilD
 
-        milieuX = (oeilGX + oeilGL // 2 + oeilDX + oeilDL // 2) // 2
-        milieuY = (oeilGY + oeilGH // 2 + oeilDY + oeilDH // 2) // 2
-        
-        pupilleGX, pupilleGY = oeilGX + oeilGL // 2, oeilGY + oeilGH // 2
-        pupilleDX, pupilleDY = oeilDX + oeilDL // 2, oeilDY + oeilDH // 2
-        
+        """
         hauteurAdaptee = max(oeilGH, oeilDH)
         facteur = hauteurAdaptee / hauteurLunettes
         largeurAdaptee = int(largeurLunettes * facteur)
         print("(facteur, hauteurAdaptee, largeurAdaptee) =", (facteur, hauteurAdaptee, largeurAdaptee))
-
+        """
+        
         # le marquage des yeux
-        for (ex,ey,ew,eh) in yeux: # deux yeux
+        for oeil in yeux: # deux yeux
+            ex,ey,ew,eh = oeil
             cv2.rectangle(image,(ex,ey),(ex+ew,ey+eh),(0,255,0),2)
-        cv2.circle(image,(pupilleGX,pupilleGY),5,(0,0,255),10) # BGR
+            
+        cv2.circle(image,pupille(*oeil),5,(0,0,255),10) # BGR
   
         imagePIL = Image.fromarray(image)
 
