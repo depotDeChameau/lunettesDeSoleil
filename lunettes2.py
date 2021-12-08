@@ -12,7 +12,7 @@ lunettes = cv2.imread('lunettesMieux.png', cv2.IMREAD_UNCHANGED)
 print(lunettes.shape)
 
 def pupille(visage, oeil):
-    print(visage, oeil)
+    print("visage =", visage, "oeil =", oeil)
     vX, vY, *_ = visage
     ex, ey, ew, eh = oeil
     
@@ -36,22 +36,29 @@ def f(image : np.array, lunettes : np.array) -> np.array :
         print("len(yeux) =", len(yeux))
         if len(yeux) >= 2: # si au moins deux yeux ont ete detectes
             oeilG, oeilD, *_ = yeux # on ne garde que les deux premiers
-            for oeil in oeilG, oeilD: # 2 iterations ^^
-                ex,ey,ew,eh = oeil
-                cv2.rectangle(image,(vX+ex,vY+ey),(vX+ex+ew,vY+ey+eh),(0,255,0),2)
-            
-                cv2.circle(image,pupille(visage, oeil),2,(0,0,255),2) # BGR
-  
-                hauteurAdaptee = eh
-                facteur = hauteurAdaptee / hauteurLunettes
-                largeurAdaptee = int(largeurLunettes * facteur)
 
-                if(facteur > 0):
-                    lunettesAdaptees = cv2.resize(lunettes, (largeurAdaptee, hauteurAdaptee))
-                    lunettesAdapteesPIL = Image.fromarray(lunettes)
-                    #imagePIL.paste(lunettesAdapteesPIL, (x, oeilGY), lunettesAdapteesPIL)
+            if tuple(oeilD) < tuple(oeilG) : # si jamais les yeux sont pas dans le bon sens
+                oeilG, oeilD = oeilD, oeilG
+            
+            print("oeilG =", oeilG, "oeilD =", oeilD)
+            oeilGX, oeilGY, oeilGL, oeilGH = oeilG
+            oeilDX, oeilDY, oeilDL, oeilDH = oeilD
+
+            cv2.rectangle(image,(vX+oeilGX,vY+oeilGY),(vX+oeilGX+oeilGL,vY+oeilGY+oeilGH),(0,255,0),2)
+            cv2.circle(image,pupille(visage, oeilG),2,(0,0,255),2) # BGR
+
+            cv2.rectangle(image,(vX+oeilDX,vY+oeilDY),(vX+oeilDX+oeilDL,vY+oeilDY+oeilDH),(255,0,0),2)
+            cv2.circle(image,pupille(visage, oeilD),2,(0,0,255),2) # BGR
+
+            largeurAdaptee, hauteurAdaptee = oeilDX + oeilDL - oeilGX, max(oeilGH, oeilDH)
+            print("largeurAdaptee =", largeurAdaptee, "hauteurAdaptee =", hauteurAdaptee)
+            
+            lunettesAdaptees = cv2.resize(lunettes, (largeurAdaptee, hauteurAdaptee)) # deformation des lunettes toleree
+            lunettesAdapteesPIL = Image.fromarray(lunettesAdaptees)
 
         imagePIL = Image.fromarray(image)
+        if len(yeux) >= 2:
+            imagePIL.paste(lunettesAdapteesPIL, (vX+oeilGX, vY+oeilDY), lunettesAdapteesPIL)
 
     return np.asarray(imagePIL)
     
