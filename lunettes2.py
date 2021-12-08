@@ -6,53 +6,52 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 
 
-image = cv2.imread('nombreux.jpg') # np.array
+image = cv2.imread('starsDEntreprise.jpg') # np.array
 lunettes = cv2.imread('lunettesMieux.png', cv2.IMREAD_UNCHANGED)
 
 print(lunettes.shape)
 
-def pupille(ex, ey, ew, eh):
-    return ex + ew // 2, ey + eh // 2
+def pupille(visage, oeil):
+    print(visage, oeil)
+    vX, vY, *_ = visage
+    ex, ey, ew, eh = oeil
+    
+    return vX + ex + ew // 2, vY + ey + eh // 2
 
 def f(image : np.array, lunettes : np.array) -> np.array :
     print("Dimension de l'image contenant les visages :", image.shape)
     print("Dimension de l'image contenant les lunettes :", lunettes.shape)
     
     imageGrise = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    faces  = face_cascade.detectMultiScale(image, 1.3, 5)
+    visages  = face_cascade.detectMultiScale(image, 1.3, 5)
 
     hauteurLunettes, largeurLunettes, _ = lunettes.shape
 
-    for (x,y,w,h) in faces:
-        cv2.rectangle(image,(x,y),(x+w,y+h),(255,0,0),2)
-        face = imageGrise[y:y+h, x:x+w] # isole la face
-        #roi_color = img[y:y+h, x:x+w]
+    for visage in visages:
+        vX,vY,vL,vH = visage
+        cv2.rectangle(image,(vX,vY),(vX+vL,vY+vH),(255,0,0),2)
+        imageVisage = imageGrise[vY:vY+vH, vX:vX+vL] # isole le visage
         
-        yeux = eye_cascade.detectMultiScale(image)
-        print("Dimension des yeux :", yeux.shape)
-
-        """
-        hauteurAdaptee = max(oeilGH, oeilDH)
-        facteur = hauteurAdaptee / hauteurLunettes
-        largeurAdaptee = int(largeurLunettes * facteur)
-        print("(facteur, hauteurAdaptee, largeurAdaptee) =", (facteur, hauteurAdaptee, largeurAdaptee))
-        """
-        
-        # le marquage des yeux
-        for oeil in yeux: # deux yeux
-            ex,ey,ew,eh = oeil
-            cv2.rectangle(image,(ex,ey),(ex+ew,ey+eh),(0,255,0),2)
+        yeux = eye_cascade.detectMultiScale(imageVisage) # detection d'yeux uniquement dans une zone de visage
+        print("len(yeux) =", len(yeux))
+        if len(yeux) >= 2: # si au moins deux yeux ont ete detectes
+            oeilG, oeilD, *_ = yeux # on ne garde que les deux premiers
+            for oeil in oeilG, oeilD: # 2 iterations ^^
+                ex,ey,ew,eh = oeil
+                cv2.rectangle(image,(vX+ex,vY+ey),(vX+ex+ew,vY+ey+eh),(0,255,0),2)
             
-        cv2.circle(image,pupille(*oeil),5,(0,0,255),10) # BGR
+                cv2.circle(image,pupille(visage, oeil),2,(0,0,255),2) # BGR
   
+                hauteurAdaptee = eh
+                facteur = hauteurAdaptee / hauteurLunettes
+                largeurAdaptee = int(largeurLunettes * facteur)
+
+                if(facteur > 0):
+                    lunettesAdaptees = cv2.resize(lunettes, (largeurAdaptee, hauteurAdaptee))
+                    lunettesAdapteesPIL = Image.fromarray(lunettes)
+                    #imagePIL.paste(lunettesAdapteesPIL, (x, oeilGY), lunettesAdapteesPIL)
+
         imagePIL = Image.fromarray(image)
-
-        if(facteur > 0):
-            lunettesAdaptees = cv2.resize(lunettes, (largeurAdaptee, hauteurAdaptee))
-            lunettesAdapteesPIL = Image.fromarray(lunettes)
-            x = milieuX - largeurAdaptee // 2 # moche moche
-            #imagePIL.paste(lunettesAdapteesPIL, (x, oeilGY), lunettesAdapteesPIL)
-
 
     return np.asarray(imagePIL)
     
