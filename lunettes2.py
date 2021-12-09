@@ -24,10 +24,11 @@ def f(image : np.array, lunettes : np.array, dbg : bool = False) -> np.array :
 
     hauteurLunettes, largeurLunettes, _ = lunettes.shape
 
-    for visage in visages:
+    for (i,visage) in enumerate(visages):
         vX,vY,vL,vH = visage
         if dbg:
             cv2.rectangle(image,(vX,vY),(vX+vL,vY+vH),(255,0,0),1)
+            cv2.putText(image,str(i),(vX,vY),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
         imageVisage = imageGrise[vY:vY+vH*3//5, vX:vX+vL] # isole le visage
         
         yeux = eye_cascade.detectMultiScale(imageVisage, 1.3,5) # detection d'yeux uniquement dans une zone de visage
@@ -86,7 +87,7 @@ while True:
     #cv2.imshow('Lunettes', resultat)
     ret, imageVideo = cap.read()
     if True or compteur % 5 == 0:
-        resultat = f(imageVideo, lunettes)    
+        resultat = f(imageVideo, lunettes, dbg=False) 
     cv2.imshow('Greta', resultat)
     if cv2.waitKey(1) == ord('q'):
         break
