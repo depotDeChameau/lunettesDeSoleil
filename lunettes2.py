@@ -2,6 +2,26 @@ import numpy as np
 import cv2
 from PIL import Image
 
+xMoy = []
+yMoy = []
+lMoy = []
+hMoy = []
+
+def enfiler(oeil, f, l=10):
+    f.append(oeil)
+    if len(f) > l: l.pop(0)
+
+def moyenne(yeux):
+    print(yeux)
+    oeilX , oeilY, oeilL, oeilH = 0, 0, 0, 0
+    n = len(yeux)
+    for x, y, l, h in yeux:
+        oeilX += x
+        oeilY += y
+        oeilL += l
+        oeilH += h
+    return oeilX / n, oeilY / n, oeilL / n, oeilH / n
+        
 def pupille(visage, oeil):
     vX, vY, *_ = visage
     ex, ey, ew, eh = oeil
@@ -20,7 +40,7 @@ def f(image : np.array, lunettes : np.array, dbg : bool = False) -> np.array :
     
     imageGrise = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     imagePIL = Image.fromarray(image)
-    visages  = face_cascade.detectMultiScale(image, 1.3, 5)
+    visages  = face_cascade.detectMultiScale(imageGrise, 1.3, 5)
 
     hauteurLunettes, largeurLunettes, _ = lunettes.shape
 
@@ -40,6 +60,7 @@ def f(image : np.array, lunettes : np.array, dbg : bool = False) -> np.array :
                 oeilG, oeilD = oeilD, oeilG
             
             #print("oeilG =", oeilG, "oeilD =", oeilD)
+            
             oeilGX, oeilGY, oeilGL, oeilGH = oeilG
             oeilDX, oeilDY, oeilDL, oeilDH = oeilD
 
@@ -71,28 +92,48 @@ def f(image : np.array, lunettes : np.array, dbg : bool = False) -> np.array :
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
-
-
-image = cv2.imread('jacquouille.jpg') # np.array
 lunettes = cv2.imread('lunettesMieux.png', cv2.IMREAD_UNCHANGED)
 
-print(lunettes.shape)
 
-#cap = cv2.VideoCapture('greta.mp4')
-cap = cv2.VideoCapture(0)
+def testImages():
+    image = cv2.imread('jacquouille.jpg') # np.array
+    
+    imageRGB = cv2.cvtColor(f(image, lunettes, dbg=True), cv2.COLOR_BGR2RGB)
+    print(type(image))
+    jacque = Image.fromarray(imageRGB)
+    jacque.show()
+    
+    print(lunettes.shape)
 
-compteur = 0
+def lireCamera():
+    #cap = cv2.VideoCapture('greta.mp4')
+    cap = cv2.VideoCapture(0)
 
-while True:
-    #cv2.imshow('Lunettes', resultat)
-    ret, imageVideo = cap.read()
-    if True or compteur % 5 == 0:
-        resultat = f(imageVideo, lunettes, dbg=False) 
-    cv2.imshow('Greta', resultat)
-    if cv2.waitKey(1) == ord('q'):
-        break
-    compteur += 1
-#Image.fromarray(resultat).show()
+    compteur = 0
+    porterLunettes = True
+    titre = 'Greta'
+    
+    while True:
+        #cv2.imshow('Lunettes', resultat)
+        ret, imageVideo = cap.read()
+        if porterLunettes :
+            resultat = f(imageVideo, lunettes, dbg=True) 
+            cv2.imshow(titre, resultat)
+        else:
+            cv2.imshow(titre, imageVideo)
+        if cv2.waitKey(1) == ord('p'):
+            porterLunettes = not porterLunettes
+            print("Porter les lunettes :", porterLunettes)
+        if cv2.waitKey(1) == ord('q'):
+            break
+        compteur += 1
+    #Image.fromarray(resultat).show()
 
-cap.release()
-cv2.destroyAllWindows() # destroys the window showing image
+    cap.release()
+    cv2.destroyAllWindows() # destroys the window showing image
+
+
+if __name__ == '__main__':
+    print("Bonjour")
+    #testImages()
+    lireCamera()
