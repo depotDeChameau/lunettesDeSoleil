@@ -7,20 +7,12 @@ yMoy = []
 lMoy = []
 hMoy = []
 
-def enfiler(oeil, f, l=10):
-    f.append(oeil)
-    if len(f) > l: l.pop(0)
+def enfiler(v, f, l=5):
+    f.append(v)
+    if len(f) > l: f.pop(0)
 
-def moyenne(yeux):
-    print(yeux)
-    oeilX , oeilY, oeilL, oeilH = 0, 0, 0, 0
-    n = len(yeux)
-    for x, y, l, h in yeux:
-        oeilX += x
-        oeilY += y
-        oeilL += l
-        oeilH += h
-    return oeilX / n, oeilY / n, oeilL / n, oeilH / n
+def moyenne(l):
+    return sum(l) / len(l)
         
 def pupille(visage, oeil):
     vX, vY, *_ = visage
@@ -76,17 +68,22 @@ def f(image : np.array, lunettes : np.array, dbg : bool = False) -> np.array :
             largeurAdaptee = int(facteur * largeurLunettes)
             
             #print("largeurAdaptee =", largeurAdaptee, "hauteurAdaptee =", hauteurAdaptee)
+
+            enfiler(largeurAdaptee, lMoy)
+            enfiler(hauteurAdaptee, hMoy)
             
-            lunettesAdaptees = cv2.resize(lunettes, (largeurAdaptee, hauteurAdaptee)) # deformation des lunettes toleree
-            lunettesAdapteesPIL = Image.fromarray(lunettesAdaptees)
-
-            imagePIL = Image.fromarray(image)
             mX, mY = milieu(oeilG, oeilD)
-            imagePIL.paste(lunettesAdapteesPIL, (vX+mX-largeurAdaptee//2, vY+mY-int(0.35*hauteurAdaptee)), lunettesAdapteesPIL)
 
-            image = np.asarray(imagePIL)
-        else: # si les yeux des visages de sont pas reconnus
-            imagePIL = Image.fromarray(image)
+            enfiler(vX+mX-largeurAdaptee//2, xMoy)
+            enfiler(vY+mY-int(0.35*hauteurAdaptee), yMoy)
+            
+    if xMoy:
+        imagePIL = Image.fromarray(image)
+        lunettesAdaptees = cv2.resize(lunettes, (int(moyenne(lMoy)), int(moyenne(hMoy)))) # deformation des lunettes toleree
+        lunettesAdapteesPIL = Image.fromarray(lunettesAdaptees)
+        imagePIL.paste(lunettesAdapteesPIL, (int(moyenne(xMoy)), int(moyenne(yMoy))), lunettesAdapteesPIL)        
+    else: # si les yeux des visages de sont pas reconnus
+        imagePIL = Image.fromarray(image)
             
     return np.asarray(imagePIL)
 
@@ -111,13 +108,13 @@ def lireCamera():
 
     compteur = 0
     porterLunettes = True
-    titre = 'Greta'
+    titre = 'Lunettes'
     
     while True:
         #cv2.imshow('Lunettes', resultat)
         ret, imageVideo = cap.read()
         if porterLunettes :
-            resultat = f(imageVideo, lunettes, dbg=True) 
+            resultat = f(imageVideo, lunettes, dbg=False) 
             cv2.imshow(titre, resultat)
         else:
             cv2.imshow(titre, imageVideo)
